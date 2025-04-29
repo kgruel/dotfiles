@@ -5,7 +5,7 @@
 # It currently supports:
 # - uv tools listed in ~/.dotfiles/uv/installed_tools
 # - VSCode extensions listed in ~/.dotfiles/vscode/vscode_extensions
-#
+# - brew tools listed in ~/.dotfiles/brew/brew_installed
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
