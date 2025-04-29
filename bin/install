@@ -18,6 +18,7 @@ set -o pipefail
 DOTFILES_DIR="$HOME/.dotfiles"
 UV_TOOLS_FILE="$DOTFILES_DIR/uv/installed_tools"
 VSCODE_EXTENSIONS_FILE="$DOTFILES_DIR/vscode/vscode_extensions"
+BREW_INSTALLED_FILE="$DOTFILES_DIR/brew/brew_installed"
 
 # --- Functions ---
 
@@ -106,11 +107,48 @@ VSCode and ensure 'code' is in your PATH to install extensions." >&2
     echo "Finished processing VSCode extensions."
 }
 
+# Function to install Homebrew packages from the list
+install_brew_packages() {
+    echo "--- Installing Homebrew packages ---"
+
+    if [ ! -f "$BREW_INSTALLED_FILE" ]; then
+        echo "Warning: Homebrew package list not found at $BREW_INSTALLED_FILE. Skipping Homebrew installation."
+        return 0
+    fi
+
+    if ! command_exists brew; then
+        echo "Error: 'brew' command not found. Please install Homebrew to install packages." >&2
+        return 1
+    fi
+
+    echo "Reading packages from $BREW_INSTALLED_FILE..."
+
+    while IFS= read -r pkg; do
+        # Skip empty lines and lines starting with # (comments)
+        if [ -z "$pkg" ] || [[ "$pkg" =~ ^# ]]; then
+            continue
+        fi
+        echo "  Installing Homebrew package: $pkg"
+        if ! brew list --formula | grep -qx "$pkg" && ! brew list --cask | grep -qx "$pkg"; then
+            if ! brew install "$pkg" 2>/dev/null; then
+                if ! brew install --cask "$pkg"; then
+                    echo "  Warning: Failed to install Homebrew package '$pkg'. Please check error messages above." >&2
+                fi
+            fi
+        else
+            echo "  $pkg is already installed."
+        fi
+    done < "$BREW_INSTALLED_FILE"
+
+    echo "Finished processing Homebrew packages."
+}
+
 # --- Main Script Execution ---
 
 echo "Starting dotfiles software installation from $DOTFILES_DIR..."
 
 # Call the installation functions
+install_brew_packages
 install_uv_tools
 install_vscode_extensions
 

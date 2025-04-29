@@ -1,0 +1,13 @@
+#!/bin/sh
+
+echo "Saving Homebrew installed packages..."
+
+# Ensure the brew directory exists
+BREW_DIR="$HOME/.dotfiles/brew"
+mkdir -p "$BREW_DIR"
+
+# Save the list of installed formulae and casks
+brew list --formula > "$BREW_DIR/brew_installed"
+brew list --cask >> "$BREW_DIR/brew_installed"
+
+echo "Saved Homebrew installed packages to $BREW_DIR/brew_installed"
