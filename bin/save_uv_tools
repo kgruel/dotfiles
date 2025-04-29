@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Saving uv installed tools..."
+ls $(uv tool dir) > "$HOME"/.dotfiles/uv/installed_tools

@@ -1,0 +1,6 @@
+cache-prompts: true
+cache-keepalive-pings: true
+dark-mode: true
+just-check-update: true
+notifications: true
+editor: nano

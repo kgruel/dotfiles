@@ -1,0 +1,121 @@
+#!/bin/bash
+#
+#
+# This script reads lists of software saved in ~/.dotfiles and installs them.
+# It currently supports:
+# - uv tools listed in ~/.dotfiles/uv/installed_tools
+# - VSCode extensions listed in ~/.dotfiles/vscode/vscode_extensions
+#
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+# Treat unset variables as an error when substituting.
+set -u
+# Prevent errors in a pipeline from being masked.
+set -o pipefail
+
+# --- Configuration ---
+DOTFILES_DIR="$HOME/.dotfiles"
+UV_TOOLS_FILE="$DOTFILES_DIR/uv/installed_tools"
+VSCODE_EXTENSIONS_FILE="$DOTFILES_DIR/vscode/vscode_extensions"
+
+# --- Functions ---
+
+# Function to check if a command exists
+command_exists () {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Function to install UV tools from the list
+install_uv_tools() {
+    echo "--- Installing uv tools ---"
+
+    if [ ! -f "$UV_TOOLS_FILE" ]; then
+        echo "Warning: UV tools list not found at $UV_TOOLS_FILE. Skipping UV
+tool installation."
+        return 0
+    fi
+
+    if ! command_exists uv; then
+        echo "Error: 'uv' command not found. Please install uv to install uv
+tools." >&2
+        # Don't exit script, allow other installations to proceed
+        return 1
+    fi
+
+    echo "Reading tools from $UV_TOOLS_FILE..."
+
+    # Read the file line by line
+    while IFS= read -r tool_name; do
+        # Skip empty lines and lines starting with # (comments)
+        if [ -z "$tool_name" ] || [[ "$tool_name" =~ ^# ]]; then
+            continue
+        fi
+
+        echo "  Installing uv tool: $tool_name"
+        # Use 'uv tool install' to install the tool
+        # Redirect stderr to /dev/null to hide installation progress messages,
+        # but still show errors if installation fails.
+        if ! uv tool install "$tool_name"; then
+            echo "  Warning: Failed to install uv tool '$tool_name'. Please
+check error messages above." >&2
+            # Continue with the next tool
+        fi
+    done < "$UV_TOOLS_FILE"
+
+    echo "Finished processing uv tools."
+}
+
+# Function to install VSCode extensions from the list
+install_vscode_extensions() {
+    echo "--- Installing VSCode extensions ---"
+
+    if [ ! -f "$VSCODE_EXTENSIONS_FILE" ]; then
+        echo "Warning: VSCode extensions list not found at
+$VSCODE_EXTENSIONS_FILE. Skipping VSCode extension installation."
+        return 0
+    fi
+
+    if ! command_exists code; then
+        echo "Error: 'code' command (VSCode CLI) not found. Please install
+VSCode and ensure 'code' is in your PATH to install extensions." >&2
+        # Don't exit script, allow other installations to proceed
+        return 1
+    fi
+
+    echo "Reading extensions from $VSCODE_EXTENSIONS_FILE..."
+
+    # Read the file line by line
+    while IFS= read -r extension_id; do
+         # Skip empty lines and lines starting with # (comments)
+        if [ -z "$extension_id" ] || [[ "$extension_id" =~ ^# ]]; then
+            continue
+        fi
+
+        echo "  Installing VSCode extension: $extension_id"
+        # Use 'code --install-extension' to install the extension
+        # --force is used to skip the prompt if it's already installed.
+        # --no-sandbox might be needed in some environments, but be cautious.
+        if ! code --install-extension "$extension_id"; then
+             echo "  Warning: Failed to install VSCode extension
+'$extension_id'. Please check error messages above." >&2
+            # Continue with the next extension
+        fi
+    done < "$VSCODE_EXTENSIONS_FILE"
+
+    echo "Finished processing VSCode extensions."
+}
+
+# --- Main Script Execution ---
+
+echo "Starting dotfiles software installation from $DOTFILES_DIR..."
+
+# Call the installation functions
+install_uv_tools
+install_vscode_extensions
+
+echo "Dotfiles software installation finished."
+echo "Note: Some tools or extensions might require manual steps or
+configuration after installation."
+
+exit 0
